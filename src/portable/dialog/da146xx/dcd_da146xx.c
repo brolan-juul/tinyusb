@@ -796,6 +796,33 @@ void dcd_disconnect(uint8_t rhport)
   REG_CLR_BIT(USB_MCTRL_REG, USB_NAT);
 }
 
+// Function could be called when VBUS change was detected.
+void tusb_vbus_changed(bool present)
+{
+  if (present != _dcd.vbus_present)
+  {
+    _dcd.vbus_present = present;
+    if (present)
+    {
+      USB->USB_MCTRL_REG = USB_USB_MCTRL_REG_USBEN_Msk;
+      USB->USB_NFSR_REG = 0;
+      USB->USB_FAR_REG = 0x80;
+      USB->USB_NFSR_REG = NFSR_NODE_RESET;
+      USB->USB_TXMSK_REG = 0;
+      USB->USB_RXMSK_REG = 0;
+
+      USB->USB_MAMSK_REG = USB_USB_MAMSK_REG_USB_M_INTR_Msk |
+                           USB_USB_MAMSK_REG_USB_M_ALT_Msk |
+                           USB_USB_MAMSK_REG_USB_M_WARN_Msk;
+      USB->USB_ALTMSK_REG = USB_USB_ALTMSK_REG_USB_M_RESET_Msk;
+    }
+    else
+    {
+      USB->USB_MCTRL_REG = 0;
+    }
+  }
+}
+
 
 /*------------------------------------------------------------------*/
 /* DCD Endpoint port
